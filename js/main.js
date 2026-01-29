@@ -162,7 +162,8 @@
     productCards.forEach(card => {
         const addToCartBtn = card.querySelector('.add-to-cart');
         const quickViewBtn = card.querySelector('.quick-view');
-        const productName = card.querySelector('.product-name').textContent;
+        const productNameElement = card.querySelector('.product-name');
+        const productName = productNameElement ? productNameElement.textContent : 'Product';
 
         /**
          * Add to cart functionality
@@ -237,6 +238,12 @@
             
             const emailInput = this.querySelector('input[type="email"]');
             const submitBtn = this.querySelector('button[type="submit"]');
+            
+            if (!emailInput || !submitBtn) {
+                console.warn('Newsletter form elements not found');
+                return;
+            }
+            
             const email = emailInput.value;
 
             // Basic email validation
@@ -323,7 +330,9 @@
         document.body.appendChild(announcement);
         
         setTimeout(() => {
-            document.body.removeChild(announcement);
+            if (announcement.parentNode) {
+                announcement.parentNode.removeChild(announcement);
+            }
         }, 1000);
     }
 
@@ -359,17 +368,21 @@
      * Log performance metrics for optimization
      */
     window.addEventListener('load', function() {
-        if ('performance' in window && 'timing' in window.performance) {
+        if ('performance' in window) {
             setTimeout(() => {
-                const perfData = window.performance.timing;
-                const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-                const connectTime = perfData.responseEnd - perfData.requestStart;
-                const renderTime = perfData.domComplete - perfData.domLoading;
+                // Use modern Navigation Timing API Level 2
+                const perfEntries = performance.getEntriesByType('navigation');
+                if (perfEntries && perfEntries.length > 0) {
+                    const navTiming = perfEntries[0];
+                    const pageLoadTime = navTiming.loadEventEnd - navTiming.fetchStart;
+                    const connectTime = navTiming.responseEnd - navTiming.requestStart;
+                    const renderTime = navTiming.domComplete - navTiming.domInteractive;
 
-                console.log('Performance Metrics:');
-                console.log(`Page Load Time: ${pageLoadTime}ms`);
-                console.log(`Server Response Time: ${connectTime}ms`);
-                console.log(`DOM Render Time: ${renderTime}ms`);
+                    console.log('Performance Metrics:');
+                    console.log(`Page Load Time: ${Math.round(pageLoadTime)}ms`);
+                    console.log(`Server Response Time: ${Math.round(connectTime)}ms`);
+                    console.log(`DOM Render Time: ${Math.round(renderTime)}ms`);
+                }
             }, 0);
         }
     });
@@ -383,7 +396,7 @@
      */
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            if (navMenu && navMenu.classList.contains('active')) {
+            if (navMenu && navMenu.classList.contains('active') && navToggle) {
                 navMenu.classList.remove('active');
                 navToggle.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
